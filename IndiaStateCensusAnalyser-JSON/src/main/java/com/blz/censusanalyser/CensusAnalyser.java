@@ -13,12 +13,16 @@ import java.util.stream.StreamSupport;
 import com.google.gson.Gson;
 
 public class CensusAnalyser {
+	
 	static int numOfRecords = 0;
 	List<IndiaCensusCSV> indiaCensusCSVList = null;
-	public int loadIndiaCensusData(String csvFilePath) throws CensusAnalyserException {
+	
+	public int loadIndiaCensusData(String csvFilePath)
+			throws CensusAnalyserException {
+		
 		try (Reader reader = Files.newBufferedReader(Paths.get(csvFilePath))) {
 			ICSVBuilder csvBuilder = CSVBuilderFactoy.createCsvBuilder();
-			indiaCensusCSVList = csvBuilder.getCSVFileIterator(reader, IndiaCensusCSV.class);
+			indiaCensusCSVList = csvBuilder.getCSVFileList(reader, IndiaCensusCSV.class);
 			return indiaCensusCSVList.size();
 		} catch (NoSuchFileException e) {
 			if (!csvFilePath.contains(".csv")) {
@@ -29,16 +33,18 @@ public class CensusAnalyser {
 			throw new CensusAnalyserException(e.getMessage(),
 					CensusAnalyserException.ExceptionType.CENSUS_FILE_PROBLEM);
 		} catch (CSVBuilderException e) {
-			throw new CensusAnalyserException(e.getMessage(), CensusAnalyserException.ExceptionType.UNABLE_TO_PARSE);
+			throw new CensusAnalyserException(e.getMessage(), e.type.name());
 		}
 		return numOfRecords;
 	}
 
 	
-	public int loadIndiaCodeData(String csvFilePath) throws CensusAnalyserException {
+	public int loadIndiaCodeData(String csvFilePath)
+			throws CensusAnalyserException {
+		
 		try (Reader reader = Files.newBufferedReader(Paths.get(csvFilePath))) {
 			ICSVBuilder csvBuilder = CSVBuilderFactoy.createCsvBuilder();
-			indiaCensusCSVList = csvBuilder.getCSVFileIterator(reader, IndiaCodeCSV.class);
+			indiaCensusCSVList = csvBuilder.getCSVFileList(reader, IndiaCodeCSV.class);
 			return indiaCensusCSVList.size();
 		} catch (NoSuchFileException e) {
 			if (!csvFilePath.contains(".csv")) {
@@ -49,15 +55,10 @@ public class CensusAnalyser {
 			throw new CensusAnalyserException(e.getMessage(),
 					CensusAnalyserException.ExceptionType.CENSUS_FILE_PROBLEM);
 		} catch (CSVBuilderException e) {
-			throw new CensusAnalyserException(e.getMessage(), CensusAnalyserException.ExceptionType.UNABLE_TO_PARSE);
+			throw new CensusAnalyserException(e.getMessage(), e.type.name());
+		} catch (RuntimeException e) {
+			throw new CensusAnalyserException(e.getMessage(), CensusAnalyserException.ExceptionType.NO_SUCH_FILE);
 		}
-		return numOfRecords;
-	}
-	
-	
-	private <E> int getCount(Iterator<E> iterator) {
-		Iterable<E> csvIterable = () -> iterator;
-		int numOfRecords = (int) StreamSupport.stream(csvIterable.spliterator(), false).count();
 		return numOfRecords;
 	}
 	
@@ -67,19 +68,19 @@ public class CensusAnalyser {
 			throw new CensusAnalyserException("No census data", CensusAnalyserException.ExceptionType.NO_CENSUS_DATA);
 		}
 		Comparator<IndiaCensusCSV> censusComparator = Comparator.comparing(census -> census.state);
-		this.sort(censusComparator);
+		this.sort(indiaCensusCSVList, censusComparator);
 		String sortedStateCensusAsJSON = new Gson().toJson(indiaCensusCSVList);
 		return sortedStateCensusAsJSON;
 	}
 	
-	public void sort(Comparator<IndiaCensusCSV> censusCSVComparator) {
-		for(int index = 0; index < indiaCensusCSVList.size() - 1; index++) {
-            for(int index2 = 0; index2 < indiaCensusCSVList.size() - index - 1; index2++) {
-                IndiaCensusCSV census1 = indiaCensusCSVList.get(index2);
-                IndiaCensusCSV census2 = indiaCensusCSVList.get(index2 + 1);
-                if(censusCSVComparator.compare(census1, census2) > 0) {
-                    indiaCensusCSVList.set(index2, census2);
-                    indiaCensusCSVList.set(index2 + 1, census1);
+	public void sort(List<IndiaCensusCSV> indiaCensusCSVList, Comparator<IndiaCensusCSV> censusComparator) {
+		for(int i = 0; i < indiaCensusCSVList.size(); i++) {
+            for(int j = 0; j < indiaCensusCSVList.size() - i - 1; j++) {
+                IndiaCensusCSV census1 = indiaCensusCSVList.get(j);
+                IndiaCensusCSV census2 = indiaCensusCSVList.get(j + 1);
+                if(censusComparator.compare(census1, census2) > 0) {
+                    indiaCensusCSVList.set(j, census2);
+                    indiaCensusCSVList.set(j + 1, census1);
                 }
             }
         }
