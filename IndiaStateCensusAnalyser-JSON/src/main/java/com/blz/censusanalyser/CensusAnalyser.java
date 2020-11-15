@@ -16,6 +16,7 @@ public class CensusAnalyser {
 	
 	static int numOfRecords = 0;
 	List<IndiaCensusCSV> indiaCensusCSVList = null;
+	List<IndiaCodeCSV> indiaCodeCSVList = null;
 	
 	public int loadIndiaCensusData(String csvFilePath)
 			throws CensusAnalyserException {
@@ -84,6 +85,30 @@ public class CensusAnalyser {
                 }
             }
         }
+	}
+	
+	public String getStateCodeWiseSortedCodeData(String filePath) throws CensusAnalyserException {
+		loadIndiaCodeData(filePath);
+		if(indiaCodeCSVList == null || indiaCodeCSVList.size() ==0) {
+			throw new CensusAnalyserException("No Code data", CensusAnalyserException.ExceptionType.NO_CENSUS_DATA);
+		}
+		Comparator<IndiaCodeCSV> codeComparator = Comparator.comparing(census -> census.stateCode);
+		this.codeSort(indiaCodeCSVList, codeComparator);
+		String sortedStateCodeAsJSON = new Gson().toJson(indiaCodeCSVList);
+		return sortedStateCodeAsJSON;
+	}
+	
+	public void codeSort(List<IndiaCodeCSV> indiaCodeCSVList, Comparator<IndiaCodeCSV> codeComparator) {
+		for(int i = 0; i < indiaCodeCSVList.size(); i++) {
+			for(int j = 0; j < indiaCodeCSVList.size() - i - 1; j++) {
+				IndiaCodeCSV census1 = indiaCodeCSVList.get(j);
+				IndiaCodeCSV census2 = indiaCodeCSVList.get(j + 1);
+				if(codeComparator.compare(census1, census2) > 0) {
+					indiaCodeCSVList.set(j, census2);
+					indiaCodeCSVList.set(j + 1, census1);
+				}
+			}
+		}
 	}
 }
 

@@ -148,5 +148,17 @@ public class CensusAnalyserTest {
     		e.printStackTrace();
     	}
     }
+    
+    @Test
+    public void given_IndianCodeData_ShouldSortOnStateCode_AccToAlphabeticalOrder_ShouldReturnResult() {
+    	String sortedCodeData = null;
+    	try {
+    		sortedCodeData = censusAnalyser.getStateCodeWiseSortedCodeData(INDIA_CODE_CSV_FILE_PATH);
+    		System.out.println(sortedCodeData);
+    		IndiaCodeCSV[] censusCSV = new Gson().fromJson(sortedCodeData, IndiaCodeCSV[].class);
+    	} catch (CensusAnalyserException e) {
+    		e.printStackTrace();
+    	}
+    }
 }
 
